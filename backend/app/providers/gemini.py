@@ -5,6 +5,7 @@ import time
 from collections.abc import Callable, Iterator
 from typing import TypeVar
 
+import httpx
 from google import genai
 from google.genai import errors as genai_errors
 
@@ -21,6 +22,7 @@ _EMBED_BATCH_SIZE = 100  # Gemini embedding API accepts at most 100 texts per ca
 _UNAVAILABLE_MESSAGE = (
     "The AI service is temporarily unavailable or rate-limited. Please try again in a moment."
 )
+_AUTH_MESSAGE = "The AI service rejected the credentials. Check the GEMINI_API_KEY in your .env."
 
 T = TypeVar("T")
 
@@ -61,22 +63,30 @@ class GeminiProvider:
             for chunk in chunks:
                 if chunk.text:
                     yield chunk.text
-        except genai_errors.APIError as exc:
-            logger.error("Gemini stream failed mid-response (HTTP %s)", exc.code)
+        except (genai_errors.APIError, httpx.HTTPError) as exc:
+            logger.error("Gemini stream failed mid-response: %s", type(exc).__name__)
             raise ProviderError(_UNAVAILABLE_MESSAGE) from exc
 
     def _with_retries(self, call: Callable[[], T]) -> T:
+        # httpx.HTTPError covers transport failures (DNS, resets, timeouts),
+        # which the SDK raises directly instead of wrapping in APIError.
         delay = _INITIAL_BACKOFF_SECONDS
         for attempt in range(1, _MAX_ATTEMPTS + 1):
             try:
                 return call()
-            except genai_errors.APIError as exc:
-                if exc.code not in _RETRYABLE_CODES or attempt == _MAX_ATTEMPTS:
-                    logger.error("Gemini call failed (HTTP %s), giving up", exc.code)
+            except (genai_errors.APIError, httpx.HTTPError) as exc:
+                code = getattr(exc, "code", None)
+                # Gemini reports an invalid key as 400 INVALID_ARGUMENT, not 401.
+                if code in (401, 403) or "api key" in str(exc).lower():
+                    logger.error("Gemini rejected the API key (HTTP %s)", code)
+                    raise ProviderError(_AUTH_MESSAGE) from exc
+                retryable = isinstance(exc, httpx.HTTPError) or code in _RETRYABLE_CODES
+                if not retryable or attempt == _MAX_ATTEMPTS:
+                    logger.error("Gemini call failed (%s), giving up", code or type(exc).__name__)
                     raise ProviderError(_UNAVAILABLE_MESSAGE) from exc
                 logger.warning(
-                    "Gemini call failed (HTTP %s), retrying in %.1fs (attempt %d/%d)",
-                    exc.code,
+                    "Gemini call failed (%s), retrying in %.1fs (attempt %d/%d)",
+                    code or type(exc).__name__,
                     delay,
                     attempt,
                     _MAX_ATTEMPTS,

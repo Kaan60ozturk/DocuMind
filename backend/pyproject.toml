@@ -2,7 +2,6 @@
 name = "docmind-backend"
 version = "0.1.0"
 description = "DocuMind — RAG document assistant backend (FastAPI + Gemini + ChromaDB)"
-readme = "../README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
 dependencies = [

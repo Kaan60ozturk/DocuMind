@@ -15,9 +15,18 @@ from app.providers.base import EmbeddingProvider
 
 logger = logging.getLogger(__name__)
 
+# Upload size is checked on the compressed bytes; this bounds the *extracted*
+# text so a small file that decompresses enormously (zip-bomb DOCX) cannot
+# exhaust memory or trigger unbounded embedding calls.
+MAX_TOTAL_TEXT_CHARS = 5_000_000
+
 
 class EmptyDocumentError(ValueError):
     """The file parsed successfully but contains no extractable text."""
+
+
+class DocumentTooLargeError(ValueError):
+    """The file expands to more text than the pipeline is willing to process."""
 
 
 def ingest_file(
@@ -35,6 +44,12 @@ def ingest_file(
     started = time.perf_counter()
 
     pages = parse_file(stored_path)
+    total_chars = sum(len(page.text) for page in pages)
+    if total_chars > MAX_TOTAL_TEXT_CHARS:
+        raise DocumentTooLargeError(
+            "The document contains too much text to process "
+            f"(over {MAX_TOTAL_TEXT_CHARS:,} characters)."
+        )
     chunks = chunk_pages(
         pages,
         doc_id=doc_id,

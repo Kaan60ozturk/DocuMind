@@ -29,6 +29,28 @@ export interface AssistantMessage {
 export type Message = UserMessage | AssistantMessage;
 
 const MAX_HISTORY_TURNS = 6;
+const MAX_TURN_CHARS = 4000; // mirrors the backend's per-turn limit
+
+/** Completed, successful question/answer pairs only — a failed turn
+ *  contributes nothing (keeping its question would confuse the model). */
+function buildHistory(messages: Message[]): ChatTurn[] {
+  const turns: ChatTurn[] = [];
+  for (let i = 0; i < messages.length - 1; i++) {
+    const question = messages[i];
+    const answer = messages[i + 1];
+    if (
+      question.role === 'user' &&
+      answer.role === 'assistant' &&
+      answer.content &&
+      !answer.error &&
+      !answer.streaming
+    ) {
+      turns.push({ role: 'user', content: question.content.slice(0, MAX_TURN_CHARS) });
+      turns.push({ role: 'assistant', content: answer.content.slice(0, MAX_TURN_CHARS) });
+    }
+  }
+  return turns.slice(-MAX_HISTORY_TURNS);
+}
 
 export default function App() {
   const [documents, setDocuments] = useState<DocumentInfo[]>([]);
@@ -123,10 +145,7 @@ export default function App() {
       const question = rawQuestion.trim();
       if (!question || isStreaming) return;
 
-      const history: ChatTurn[] = messages
-        .filter((message) => message.role === 'user' || (!message.error && message.content))
-        .map((message) => ({ role: message.role, content: message.content }))
-        .slice(-MAX_HISTORY_TURNS);
+      const history = buildHistory(messages);
 
       setMessages((prev) => [
         ...prev,

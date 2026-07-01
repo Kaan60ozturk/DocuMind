@@ -22,7 +22,11 @@ export default function Chat({ messages, disabled, hasDocuments, onSend }: ChatP
 
   useEffect(() => {
     const element = scrollRef.current;
-    if (element) element.scrollTop = element.scrollHeight;
+    if (!element) return;
+    // Follow the stream only while the user is already near the bottom;
+    // never yank them back down while they are reading older messages.
+    const distanceFromBottom = element.scrollHeight - element.scrollTop - element.clientHeight;
+    if (distanceFromBottom < 160) element.scrollTop = element.scrollHeight;
   }, [messages]);
 
   const submit = (question: string) => {
@@ -34,7 +38,9 @@ export default function Chat({ messages, disabled, hasDocuments, onSend }: ChatP
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key === 'Enter' && !event.shiftKey) {
+    // isComposing: Enter inside an IME composition confirms the characters,
+    // it must not submit the message.
+    if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
       event.preventDefault();
       submit(draft);
     }

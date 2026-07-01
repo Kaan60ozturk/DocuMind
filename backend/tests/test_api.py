@@ -124,6 +124,44 @@ def test_chat_rejects_overlong_question(client):
     assert response.status_code == 422
 
 
+def test_overlong_history_content_is_clamped_not_rejected(client, fake_llm):
+    _upload(client)
+    history = [
+        {"role": "user", "content": "short question"},
+        {"role": "assistant", "content": "y" * 10_000},  # longer than the per-turn limit
+    ]
+    with client.stream(
+        "POST", "/api/chat", json={"question": "And now?", "history": history}
+    ) as response:
+        assert response.status_code == 200
+        events = _read_sse_events(response)
+
+    assert events[-1] == {"type": "done"}
+    # The oversized turn arrived truncated, not as a 422.
+    assert "y" * 4000 in fake_llm.prompts[-1]
+    assert "y" * 4001 not in fake_llm.prompts[-1]
+
+
+def test_chat_emits_error_event_on_unexpected_failure(client, app, fake_llm):
+    _upload(client)
+
+    def boom(*args, **kwargs):
+        raise RuntimeError("simulated vector store failure")
+
+    app.state.vectorstore.query = boom
+    with client.stream(
+        "POST", "/api/chat", json={"question": "Does the stream die?", "history": []}
+    ) as response:
+        assert response.status_code == 200
+        events = _read_sse_events(response)
+
+    # The contract guarantees a terminal event even on unexpected failures,
+    # and the message must not leak internals.
+    assert events[-1]["type"] == "error"
+    assert "simulated" not in events[-1]["message"]
+    assert fake_llm.prompts == []
+
+
 def test_history_is_truncated_server_side(client, fake_llm):
     _upload(client)
     history = [

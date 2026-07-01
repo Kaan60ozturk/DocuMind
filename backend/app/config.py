@@ -5,6 +5,11 @@ from pathlib import Path
 from pydantic import ValidationError
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+# The repository root (this file lives at backend/app/config.py). The .env
+# file is documented to live here, so find it regardless of the CWD the
+# server was started from (repo root, backend/, or the Docker workdir).
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+
 
 class Settings(BaseSettings):
     """All runtime configuration, mapped 1:1 to environment variables.
@@ -14,7 +19,7 @@ class Settings(BaseSettings):
     """
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=(_REPO_ROOT / ".env", ".env"),  # later entries win on conflict
         env_file_encoding="utf-8",
         extra="ignore",
     )
