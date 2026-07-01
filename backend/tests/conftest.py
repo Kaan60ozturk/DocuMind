@@ -1,4 +1,4 @@
-"""Shared fixtures: fake providers and tmp data dir. Zero network."""
+"""Shared fixtures: fake providers, tmp data dir, wired test app. Zero network."""
 
 import hashlib
 import math
@@ -6,10 +6,12 @@ import re
 from collections.abc import Iterator
 
 import pytest
+from fastapi.testclient import TestClient
 
 from app.config import Settings
 from app.db.documents import DocumentRegistry
 from app.db.vectorstore import VectorStore
+from app.main import create_app
 
 
 class FakeEmbeddingProvider:
@@ -73,6 +75,17 @@ def fake_embedder() -> FakeEmbeddingProvider:
 @pytest.fixture
 def fake_llm() -> FakeLLMProvider:
     return FakeLLMProvider()
+
+
+@pytest.fixture
+def app(settings, fake_embedder, fake_llm):
+    return create_app(settings, embedder=fake_embedder, llm=fake_llm)
+
+
+@pytest.fixture
+def client(app) -> Iterator[TestClient]:
+    with TestClient(app) as test_client:
+        yield test_client
 
 
 @pytest.fixture
