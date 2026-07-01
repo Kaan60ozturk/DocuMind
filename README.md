@@ -2,7 +2,7 @@
 
 **Upload your documents, ask questions in plain language, get answers with page-level citations — powered by a transparent, inspectable RAG pipeline.**
 
-[![CI](https://github.com/YOUR-USERNAME/docmind/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR-USERNAME/docmind/actions/workflows/ci.yml)
+[![CI](https://github.com/Kaan60ozturk/DocuMind/actions/workflows/ci.yml/badge.svg)](https://github.com/Kaan60ozturk/DocuMind/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.11%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -52,8 +52,8 @@ On upload, files are parsed into pages, split into ~1,200-character chunks (para
 **Prerequisites:** a free Gemini API key from [Google AI Studio](https://aistudio.google.com/apikey) — plus either Docker, or Python 3.11+ and Node 20+.
 
 ```bash
-git clone https://github.com/YOUR-USERNAME/docmind.git
-cd docmind
+git clone https://github.com/Kaan60ozturk/DocuMind.git
+cd DocuMind
 cp .env.example .env
 # open .env and paste your GEMINI_API_KEY
 ```
