@@ -1,0 +1,12 @@
+services:
+  docmind:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file: .env
+    environment:
+      # Inside the container, data always lives on the mounted volume.
+      DATA_DIR: /app/data
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
