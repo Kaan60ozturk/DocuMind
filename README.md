@@ -1,6 +1,6 @@
 # DocuMind
 
-<img width="1061" height="790" alt="image" src="https://github.com/user-attachments/assets/971c7233-3497-49b9-89f2-da327513f521" />
+<img width="1920" height="1428" alt="screencapture-localhost-5173-2026-07-05-23_22_37" src="https://github.com/user-attachments/assets/458cf857-c427-45b3-9d68-34f4bd45e6db" />
 
 <img width="1314" height="254" alt="image" src="https://github.com/user-attachments/assets/6431ce9c-60bf-44bd-a6f4-db188fbbd9d7" />
 
