@@ -1,5 +1,8 @@
 # DocuMind
 
+<img width="1314" height="254" alt="image" src="https://github.com/user-attachments/assets/6431ce9c-60bf-44bd-a6f4-db188fbbd9d7" />
+
+
 **Upload your documents, ask questions in plain language, get answers with page-level citations — powered by a transparent, inspectable RAG pipeline.**
 
 [![CI](https://github.com/Kaan60ozturk/DocuMind/actions/workflows/ci.yml/badge.svg)](https://github.com/Kaan60ozturk/DocuMind/actions/workflows/ci.yml)
